@@ -22,15 +22,17 @@
 #include <sys/wait.h>
 
 #define FORK 0
-#define EAT 1
-#define SLEEP 2
-#define THINK 3
+#define EATING 1
+#define SLEEPING 2
+#define THINKING 3
+#define DIED 4
 
-#define INIT 4
-#define DESTROY 5
+#define INIT 5
+#define DESTROY 6
 
 typedef struct s_philo{
 	int	x;
+	int	state;
 	struct	s_arg *param;
 }	t_philo;
 
@@ -41,11 +43,9 @@ int			time_to_die;
 int			time_to_eat;
 int			time_to_sleep; 
 int			nb_each_philo_eat; //argv optionnel
-int			oldtime;
-int			*x;
 struct timeval		time;
 long long int		time_start;
-long long int		last_eat;
+long long int		*last_eat; //each philo
 pthread_t		*thread;
 pthread_mutex_t		*mutex;
 }	t_arg;

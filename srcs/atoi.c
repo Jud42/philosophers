@@ -56,8 +56,11 @@ void	init_arg(t_arg **param, char **av)
 	(*param)->nb_of_philo);
 	if (!(*param)->mutex)
 		msg_error("error: malloc()\n", *param);	
+	(*param)->last_eat = malloc(sizeof(long long int) * (*param)->nb_of_philo);
+	if (!(*param)->last_eat)
+		msg_error("error: malloc()\n", *param);	
 	if (!gettimeofday(&(*param)->time, NULL))
-		(*param)->oldtime = (*param)->time.tv_usec;
+		(*param)->time_start = (*param)->time.tv_usec;
 }
 
 void	init_and_destroy_mutex(t_arg **param, int flag)

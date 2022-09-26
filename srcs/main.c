@@ -13,19 +13,29 @@
 
 void	*routine(void *arg)
 {
-	//int	index = -1;
-	//static	int x = 0;
-	//pthread_mutex_t mut = *(pthread_mutex_t *)arg;
-	//int	*ret = malloc(sizeof(int));
-	struct s_philo	*philo = (struct s_philo *)arg;
-	printf("%d\n", (*philo).x + 1);
-	//pthread_mutex_lock(&philo->param->mutex[(*philo).x]);
-	//pthread_mutex_lock(&philo->param->mutex[((*philo).x + 1) % philo->param->nb_of_philo]);
-	//printf("eat ==> %d\n", (*philo).x + 1);
-	//usleep(10000);
-	//pthread_mutex_unlock(&philo->param->mutex[((*philo).x + 1) % philo->param->nb_of_philo]);
-	//pthread_mutex_unlock(&philo->param->mutex[(*philo).x]);
-	//free(philo);
+	struct s_philo	*philo;
+	//long long int ora;
+	philo = (struct s_philo *)arg;
+	/*
+	while (1)
+	{
+		eat();
+		sleep();
+		think();
+		died();
+	}*/
+	printf("philo numero [%d]\n", philo->x + 1);
+	pthread_mutex_lock(&philo->param->mutex[(*philo).x]);
+	pthread_mutex_lock(&philo->param->mutex[((*philo).x + 1) % philo->param->nb_of_philo]);
+	//gettimeofday(&philo->param->time, NULL);
+	//ora = philo->param->time.tv_usec - philo->param->time_start;
+	//if (ora > philo->param->time_to_die)
+	//	printf("DIED ==> %d	time %d\n", (*philo).x + 1, ora);
+	printf("eat ==> %d\n", (*philo).x + 1);
+	usleep(philo->param->time_to_eat);
+	pthread_mutex_unlock(&philo->param->mutex[((*philo).x + 1) % philo->param->nb_of_philo]);
+	pthread_mutex_unlock(&philo->param->mutex[(*philo).x]);
+	free(philo);
 	return (NULL);
 }
 
@@ -46,15 +56,16 @@ int	main(int argc, char *argv[])
 	j = -1;
 	init_arg(&param, argv);
 	init_and_destroy_mutex(&param, INIT);
-	philo = malloc(sizeof(struct s_philo) * param->nb_of_philo);
+	//philo = malloc(sizeof(struct s_philo) * param->nb_of_philo);
 	while(++j < param->nb_of_philo)
 	{
-		//philo = malloc(sizeof(struct s_philo));
-		philo[j].x = j;
-		philo[j].param = param;
-		if (pthread_create(&param->thread[j], NULL, &routine,(void *)&philo[j]))
+		philo = malloc(sizeof(struct s_philo));
+		//philo[j].x = j;
+		//philo[j].param = param;
+		philo->x = j;
+		philo->param = param;
+		if (pthread_create(&param->thread[j], NULL, &routine,(void *)philo))
 			msg_error("error: pthread_create\n", param);
-		//free(philo->x);
 		usleep(1000);
 	}
 	j = -1;
@@ -64,7 +75,8 @@ int	main(int argc, char *argv[])
 			msg_error("error: pthread_join\n", param);
 	}
 	init_and_destroy_mutex(&param, DESTROY);
-	free(philo);
+//	free(philo);
+	free(param->last_eat);
 	free(param);
 //	printf("%d\n", i);
 //	gettimeofday(&time, NULL);
