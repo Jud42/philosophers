@@ -6,14 +6,17 @@
 #    By: mnikolov <marvin@42lausanne.ch>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/06/14 18:02:56 by rmamison          #+#    #+#              #
-#    Updated: 2022/09/19 14:04:28 by rmamison         ###   ########.fr        #
+#    Updated: 2022/09/28 16:19:01 by rmamison         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = philo
 
 SRC =	main.c \
-	atoi.c	\
+		utils.c	\
+		philo_state.c \
+		init_philo.c \
+		print_state_philo.c \
 
 SRCS = $(addprefix srcs/, $(SRC))
 DIR_S = srcs
