@@ -6,7 +6,7 @@
 /*   By: rmamison <marvin@42lausanne.ch>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/09/20 13:51:13 by rmamison          #+#    #+#             */
-/*   Updated: 2022/09/28 18:19:36 by rmamison         ###   ########.fr       */
+/*   Updated: 2022/10/04 17:40:09 by rmamison         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #include "philo.h"
@@ -58,12 +58,11 @@ static int      join_thread(t_arg **param)
 
 void	*philosophers(void *arg)
 {
-	static int i = 0;
 	t_philo	*philo;
 
 	philo = (t_philo *)arg;
-	if ((philo->x + 1) % 2 == 0)
-		usleep(philo->param->time_to_eat * 1000);
+	if (philo->x % 2 == 0)
+		usleep(philo->param->time_to_eat / 2 * 1000);
 	pthread_mutex_lock(philo->param->tmp);
 	philo->last_eat = get_time();
 	pthread_mutex_unlock(philo->param->tmp);
@@ -77,7 +76,9 @@ void	*philosophers(void *arg)
 		philo->nb_eat == philo->param->nb_each_philo_eat)
 			break ;
 	}
+	put_fork(philo);
 	free(philo);
+	init_destroy_mutex(&philo->lets_eat, 1, DESTROY);
 	return (NULL);
 }
 
@@ -86,12 +87,12 @@ int     create_thread(t_arg **param)
         int     j;
         int     nb;
         t_philo *philo;
-	t_philo **ptr_philo;
+		t_philo **ptr_philo;
 
         j = -1;
         nb = (*param)->nb_of_philo;
-	if (create_ptr_philo(&ptr_philo, param))
-		return (1);
+		if (create_ptr_philo(&ptr_philo, param))
+			return (1);
         init_destroy_mutex(&(*param)->fork, nb, INIT);
         init_destroy_mutex(&(*param)->print, 1, INIT);
         init_destroy_mutex(&(*param)->tmp, 1, INIT);
@@ -105,7 +106,8 @@ int     create_thread(t_arg **param)
                 &philosophers, (void *)philo))
                         return (msg_error("error: pthread_create\n"));
         }
-	check_up(&ptr_philo, param);
+		if (nb == 1)
+			check_up(&ptr_philo, param);
         return (join_thread(param));
 }
 

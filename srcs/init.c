@@ -1,5 +1,6 @@
 #include "philo.h"
 
+int	init_destroy_mutex(pthread_mutex_t **mut, int nb, int flag);
 static int	malloc_mutex(pthread_mutex_t **mut, int nb)
 {
 	*mut = malloc(sizeof(pthread_mutex_t) * nb);
@@ -29,6 +30,10 @@ int	init_arg(t_arg **param, char **av)
 	(*param)->nb_of_philo = ft_atoi(av[1]);
 	if (malloc_thread(&(*param)->thread, ft_atoi(av[1])))
 		return (1);
+	(*param)->fork_atom = malloc(sizeof(atomic_int) * ft_atoi(av[1]));		
+	int i = -1;//temp
+	while (ft_atoi(av[1]) > ++i)//temp
+		(*param)->fork_atom[i] = 0;	
 	(*param)->time_to_die = ft_atoi(av[2]);
 	(*param)->time_to_eat = ft_atoi(av[3]);
 	(*param)->time_to_sleep = ft_atoi(av[4]);
@@ -47,12 +52,14 @@ int	init_philo(t_philo **philo, t_arg **param, int *j)
 	*philo = malloc(sizeof(t_philo));
 	if (*philo == NULL)
 		return (msg_error("error: malloc()\n"));
-       	(*philo)->x = *j;
+    (*philo)->x = *j + 1;
 	(*philo)->state = 0;
 	(*philo)->nb_eat = 0;
-	(*philo)->fork_left = 0;
-	(*philo)->fork_right = 0;
+	(*philo)->fork_right = &(*param)->fork_atom[*j];
+	(*philo)->fork_left = &(*param)->fork_atom[(*j + 1) % (*param)->nb_of_philo];
 	(*philo)->last_eat = 0;
+	if (init_destroy_mutex(&(*philo)->lets_eat, 1, INIT))
+		return (1);
 	(*philo)->param = *param;
 	return (0);
 }

@@ -6,10 +6,10 @@ int	print_state(t_philo *philo, int state)
 	int	x_temp;
 
 	pthread_mutex_lock(philo->param->print);
-	if (philo->param->end == DIED)
+	if (philo_dead(philo))
 		return (pthread_mutex_unlock(philo->param->print));
 	time = philo->param->time_start;
-	x_temp = philo->x % philo->param->nb_of_philo + 1;
+	x_temp = (philo->x - 1) % philo->param->nb_of_philo + 1;
 	if (state == THINKING)
 		printf("%lld %d is thinking", \
 			get_time() - time, x_temp);

@@ -6,7 +6,7 @@
 /*   By: rmamison <marvin@42lausanne.ch>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/09/20 13:57:30 by rmamison          #+#    #+#             */
-/*   Updated: 2022/09/28 18:00:11 by rmamison         ###   ########.fr       */
+/*   Updated: 2022/10/04 16:54:47 by rmamison         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,28 +33,30 @@
 #define BOLD $(shell tput bold)
 
 typedef struct s_philo{
-	int		x;
-	int		state;
-	int		nb_eat;
-	int		fork_left;
-	int		fork_right;
-	long long int	last_eat; //each philo
-	struct	s_arg	*param;
+	int					x;
+	int					state;
+	int					nb_eat;
+	atomic_int		*fork_left;
+	atomic_int		*fork_right;
+	long long int		last_eat; //each philo
+	pthread_mutex_t		*lets_eat;
+	struct	s_arg		*param;
 }	t_philo;
 
 
 typedef struct s_arg{
-int		nb_of_philo;
-int		time_to_die;
-int		time_to_eat;
-int		time_to_sleep;
-int		nb_each_philo_eat; //argv optionnel
-int	end;
+int				nb_of_philo;
+int				time_to_die;
+int				time_to_eat;
+int				time_to_sleep;
+int				nb_each_philo_eat; //argv optionnel
+int				end;
 long long int	time_start;
+atomic_int	*fork_atom;
 pthread_mutex_t	*print;
 pthread_mutex_t	*fork;
 pthread_mutex_t	*tmp;
-pthread_t	*thread;
+pthread_t		*thread;
 }	t_arg;
 
 	/*----------ERROR-MANAGE-----------*/
@@ -81,4 +83,5 @@ long long int	get_time(void);
 void		free_all(t_arg **param);
 void		put_fork(t_philo *philo);
 int		life_expectancy(t_philo *philo);
+int		philo_dead(t_philo *philo);
 #endif
