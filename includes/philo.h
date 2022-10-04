@@ -18,50 +18,67 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdatomic.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 
-#define FORK 0
-#define EATING 1
-#define SLEEPING 2
-#define THINKING 3
-#define DIED 4
-
-#define INIT 5
-#define DESTROY 6
+#define TRUE 1
+#define FORK 2
+#define EATING 3
+#define SLEEPING 4
+#define THINKING 5
+#define DIED 6
+#define INIT 7
+#define DESTROY 8
+#define BOLD $(shell tput bold)
 
 typedef struct s_philo{
-	int				x;
-	int				state;
+	int		x;
+	int		state;
+	int		nb_eat;
+	int		fork_left;
+	int		fork_right;
+	long long int	last_eat; //each philo
 	struct	s_arg	*param;
 }	t_philo;
 
 
 typedef struct s_arg{
-int				nb_of_philo;
-int				time_to_die;
-int				time_to_eat;
-int				time_to_sleep; 
-int				nb_each_philo_eat; //argv optionnel
-long long int	*time_start;
-long long int	*last_eat; //each philo
-pthread_t		*thread;
+int		nb_of_philo;
+int		time_to_die;
+int		time_to_eat;
+int		time_to_sleep;
+int		nb_each_philo_eat; //argv optionnel
+int	end;
+long long int	time_start;
+pthread_mutex_t	*print;
 pthread_mutex_t	*fork;
+pthread_mutex_t	*tmp;
+pthread_t	*thread;
 }	t_arg;
 
-/*------------*/
-void			msg_error(const char *s, t_philo *philo);
-void			check_error_input(int ac, char **av);
-int				ft_atoi(const char *str);
-void			init_arg(t_arg **param, char **av);
-void			init_and_destroy_mutex(t_arg **param, int flag);
-long long int	get_time(t_philo *philo);
-void			eat(t_philo *philo);
-void			sleep_philo(t_philo *philo);	
-void			think(t_philo *philo);	
-int				died(t_philo *philo);	
-void			print_state(t_philo *philo);
-
-//nb of philo = nb of thread = nb fourchette
-
+	/*----------ERROR-MANAGE-----------*/
+int		msg_error(const char *s);
+int		error_input_exist(int ac, char **av);
+	/*------------INIT-----------*/
+int		init_arg(t_arg **param, char **av);
+int		init_philo(t_philo **philo, t_arg **param, int *j);
+int		init_destroy_mutex(pthread_mutex_t **mut, int nb, int flag);
+	/*---ROUTINE-PHILO---*/
+void		eat(t_philo *philo);
+void		sleep_philo(t_philo *philo);	
+void		think(t_philo *philo);	
+int		print_state(t_philo *philo, int state);
+	/*----MAIN------*/
+int		create_thread(t_arg **param);
+void		*philosophers(void *arg);
+	/*---UTILS---*/
+int		ft_atoi(const char *str);
+int		ft_strlen(const char *s);
+int		ft_digit(int c);	
+long long int	get_time(void);
+	/*-------*/
+void		free_all(t_arg **param);
+void		put_fork(t_philo *philo);
+int		life_expectancy(t_philo *philo);
 #endif

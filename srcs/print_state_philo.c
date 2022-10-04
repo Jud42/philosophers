@@ -1,17 +1,28 @@
 #include "philo.h"
 
-void	print_state(t_philo *philo)
+int	print_state(t_philo *philo, int state)
 {
-	long long int time;
+	long long int	time;
+	int	x_temp;
 
-	time = get_time(philo);
-	if (philo->state == FORK)
-		printf("%lld %d has taken a fork", time, philo->x + 1);
-	else if (philo->state == EATING)
-		printf("%lld %d is eating", time, philo->x + 1);
-	else if (philo->state == SLEEPING)
-		printf("%lld %d is sleeping", time, philo->x + 1);
-	else if (philo->state == THINKING)
-		printf("%lld %d is thinking", time, philo->x + 1);
+	pthread_mutex_lock(philo->param->print);
+	if (philo->param->end == DIED)
+		return (pthread_mutex_unlock(philo->param->print));
+	time = philo->param->time_start;
+	x_temp = philo->x % philo->param->nb_of_philo + 1;
+	if (state == THINKING)
+		printf("%lld %d is thinking", \
+			get_time() - time, x_temp);
+	else if (state == FORK)
+		printf("%lld %d has taken a fork", \
+			get_time() - time, x_temp);
+	else if (state == EATING)
+		printf("%lld %d is eating", \
+			get_time() - time, x_temp);
+	else if (state == SLEEPING)
+		printf("%lld %d is sleeping", \
+			get_time() - time, x_temp);
 	printf("\n");
+	pthread_mutex_unlock(philo->param->print);
+	return (TRUE);
 }

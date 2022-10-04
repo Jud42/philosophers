@@ -11,63 +11,118 @@
 /* ************************************************************************** */
 #include "philo.h"
 
-void	*routine(void *arg)
+static void check_up(t_philo ***tm_philo, t_arg **param)
 {
-	t_philo	*philo;
-		
-	philo = (t_philo *)arg;
+	int	j;
+	t_philo **philo;
 
+	philo = *tm_philo;
+	j = 0;
+	usleep((*param)->time_to_eat * 1000);
+	while (!(*param)->end)
+	{
+		if (j == (*param)->nb_of_philo)
+			j %= (*param)->nb_of_philo;
+		if (life_expectancy(philo[j]))
+		{
+			put_fork(philo[j]);
+			break ;
+		}
+	}
+	free(philo);
+}
+
+static int	create_ptr_philo(t_philo ***ptr_philo, t_arg **param)
+{
+	*ptr_philo = malloc(sizeof(t_philo *) * (*param)->nb_of_philo);
+	if (!ptr_philo)
+		return (1);
+	return (0);
+}
+
+static int      join_thread(t_arg **param)
+{
+        int     j;
+
+        j = -1;
+        while(++j < (*param)->nb_of_philo)
+        {
+                if (pthread_join((*param)->thread[j], NULL))
+                        return (msg_error("error: pthread_join\n"));
+        }
+        init_destroy_mutex(&(*param)->fork, (*param)->nb_of_philo, DESTROY);
+        init_destroy_mutex(&(*param)->print, 1, DESTROY);
+        init_destroy_mutex(&(*param)->tmp, 1, DESTROY);
+        return (0);
+}
+
+void	*philosophers(void *arg)
+{
+	static int i = 0;
+	t_philo	*philo;
+
+	philo = (t_philo *)arg;
+	if ((philo->x + 1) % 2 == 0)
+		usleep(philo->param->time_to_eat * 1000);
+	pthread_mutex_lock(philo->param->tmp);
+	philo->last_eat = get_time();
+	pthread_mutex_unlock(philo->param->tmp);
 	while (1)
 	{
-		//check if i can take a fork
-		pthread_mutex_lock(&philo->param->fork[(*philo).x]);
-		pthread_mutex_lock(&philo->param->fork[((*philo).x + 1) % philo->param->nb_of_philo]);
+		think(philo);
 		eat(philo);
-		pthread_mutex_unlock(&philo->param->fork[((*philo).x + 1) % philo->param->nb_of_philo]);
-		pthread_mutex_unlock(&philo->param->fork[(*philo).x]);
-		//sleep_philo(philo);
-		//think(philo);
-		if (died(philo))
+		sleep_philo(philo);
+		if (philo->param->end == DIED || \
+		philo->param->nb_each_philo_eat && \
+		philo->nb_eat == philo->param->nb_each_philo_eat)
 			break ;
 	}
 	free(philo);
 	return (NULL);
 }
 
+int     create_thread(t_arg **param)
+{
+        int     j;
+        int     nb;
+        t_philo *philo;
+	t_philo **ptr_philo;
+
+        j = -1;
+        nb = (*param)->nb_of_philo;
+	if (create_ptr_philo(&ptr_philo, param))
+		return (1);
+        init_destroy_mutex(&(*param)->fork, nb, INIT);
+        init_destroy_mutex(&(*param)->print, 1, INIT);
+        init_destroy_mutex(&(*param)->tmp, 1, INIT);
+        (*param)->time_start = get_time();
+        while(++j < nb)
+        {
+                if (init_philo(&philo, param, &j))
+                        return (1);
+		ptr_philo[j] = philo;
+                if (pthread_create(&(*param)->thread[j], NULL, \
+                &philosophers, (void *)philo))
+                        return (msg_error("error: pthread_create\n"));
+        }
+	check_up(&ptr_philo, param);
+        return (join_thread(param));
+}
+
+
 int	main(int argc, char *argv[])
 {
-	int		j;
 	t_arg	*param;
-	t_philo	*philo;
-	
+
 	param = NULL;
-	j = -1;
-	check_error_input(argc, argv);
+	if (error_input_exist(argc, argv))
+		return (1);
 	init_arg(&param, argv);
-	init_and_destroy_mutex(&param, INIT);
-	while(++j < param->nb_of_philo)
+	if (create_thread(&param))
 	{
-		philo = malloc(sizeof(struct s_philo));
-		philo->x = j;
-		philo->state = 0;
-		philo->param = param;
-		if (pthread_create(&param->thread[j], NULL, \
-					&routine,(void *)philo))
-			msg_error("error: pthread_create\n", philo);
-		usleep(1000);
+		free_all(&param);
+		return (1);
 	}
-	j = -1;
-	while(++j < param->nb_of_philo)
-	{
-		if (pthread_join(param->thread[j], NULL))//(void**)&ret2) != 0)
-			msg_error("error: pthread_join\n", philo);
-	}
-	init_and_destroy_mutex(&param, DESTROY);
-//	free(philo);
-	free(param->last_eat);
-	free(param);
-//	printf("%d\n", i);
-//	gettimeofday(&time, NULL);
-//	printf("time ===> %d\n, %d", time.tv_sec, time.tv_usec);
+	free_all(&param);
 	return (0);
 }

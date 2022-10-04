@@ -1,6 +1,6 @@
 #include "philo.h"
 
-static int	ft_strlen(const char *s)
+int	ft_strlen(const char *s)
 {
 	int	i;
 
@@ -12,12 +12,11 @@ static int	ft_strlen(const char *s)
 	return (i);
 }
 
-void	msg_error(const char *s, t_philo *philo)
+int	ft_digit(int c)
 {
-	if (!s)
-		return ;
-	write(2, s, ft_strlen(s));
-	exit (EXIT_FAILURE);
+	if (c >= 48 && c <= 57)
+		return (0);
+	return (!0);
 }
 
 int	ft_atoi(const char *str)
@@ -35,4 +34,13 @@ int	ft_atoi(const char *str)
 	while (*str && *str >= 48 && *str <= 57)
 		ret = ret * 10 + (*str++ - '0');
 	return (ret * negative);	
+}
+
+long long int get_time(void)
+{
+        struct  timeval time;
+
+        if (gettimeofday(&time, NULL) != 0)
+                return(msg_error("error: gettimeofday()\n"));
+        return (time.tv_sec * 1000 + time.tv_usec / 1000);
 }

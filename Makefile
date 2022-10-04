@@ -13,10 +13,12 @@
 NAME = philo
 
 SRC =	main.c \
-		utils.c	\
-		philo_state.c \
-		init_philo.c \
-		print_state_philo.c \
+	init.c \
+	utils.c	\
+	free_utils.c \
+	error_manage.c \
+	routine_philo.c \
+	print_state_philo.c \
 
 SRCS = $(addprefix srcs/, $(SRC))
 DIR_S = srcs
