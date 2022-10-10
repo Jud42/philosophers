@@ -11,36 +11,7 @@
 /* ************************************************************************** */
 #include "philo.h"
 
-static void check_up(t_philo ***tm_philo, t_arg **param)
-{
-	int	j;
-	t_philo **philo;
-
-	philo = *tm_philo;
-	j = 0;
-	usleep((*param)->time_to_eat * 1000);
-	while (!(*param)->end)
-	{
-		if (j == (*param)->nb_of_philo)
-			j %= (*param)->nb_of_philo;
-		if (life_expectancy(philo[j]))
-		{
-			put_fork(philo[j]);
-			break ;
-		}
-	}
-	free(philo);
-}
-
-static int	create_ptr_philo(t_philo ***ptr_philo, t_arg **param)
-{
-	*ptr_philo = malloc(sizeof(t_philo *) * (*param)->nb_of_philo);
-	if (!ptr_philo)
-		return (1);
-	return (0);
-}
-
-static int      join_thread(t_arg **param)
+static int      join_thread(t_arg **param, t_philo **philo)
 {
         int     j;
 
@@ -50,10 +21,26 @@ static int      join_thread(t_arg **param)
                 if (pthread_join((*param)->thread[j], NULL))
                         return (msg_error("error: pthread_join\n"));
         }
-        init_destroy_mutex(&(*param)->fork, (*param)->nb_of_philo, DESTROY);
-        init_destroy_mutex(&(*param)->print, 1, DESTROY);
-        init_destroy_mutex(&(*param)->tmp, 1, DESTROY);
+	clean_philo(&philo, (*param)->nb_of_philo);
+        init_destroy_mutex(&(*param)->m_fork, (*param)->nb_of_philo, DESTROY);
+        init_destroy_mutex(&(*param)->m_print, 1, DESTROY);
+        init_destroy_mutex(&(*param)->m_life, 1, DESTROY);
         return (0);
+}
+
+static void check_up(t_philo **tm_philo, t_arg **param)
+{
+	int	state;
+	int	nb;
+
+	state = 1;
+	nb = (*param)->nb_of_philo;
+	usleep((*param)->time_to_die / 2 * 1000);
+	while (state != DIED && (*param)->end != nb)
+	{
+		usleep(500);
+		state = life_expectancy(tm_philo, param);
+	}
 }
 
 void	*philosophers(void *arg)
@@ -62,23 +49,21 @@ void	*philosophers(void *arg)
 
 	philo = (t_philo *)arg;
 	if (philo->x % 2 == 0)
-		usleep(philo->param->time_to_eat / 2 * 1000);
-	pthread_mutex_lock(philo->param->tmp);
+		usleep(philo->param->time_to_eat * 1000);
+	pthread_mutex_lock(philo->param->m_life);
 	philo->last_eat = get_time();
-	pthread_mutex_unlock(philo->param->tmp);
+	pthread_mutex_unlock(philo->param->m_life);
 	while (1)
 	{
 		think(philo);
 		eat(philo);
 		sleep_philo(philo);
-		if (philo->param->end == DIED || \
+		if (philo_dead(philo) || \
 		philo->param->nb_each_philo_eat && \
 		philo->nb_eat == philo->param->nb_each_philo_eat)
 			break ;
 	}
-	put_fork(philo);
-	free(philo);
-	init_destroy_mutex(&philo->lets_eat, 1, DESTROY);
+	philo->param->end++;
 	return (NULL);
 }
 
@@ -87,15 +72,15 @@ int     create_thread(t_arg **param)
         int     j;
         int     nb;
         t_philo *philo;
-		t_philo **ptr_philo;
+	t_philo **ptr_philo;
 
         j = -1;
         nb = (*param)->nb_of_philo;
 		if (create_ptr_philo(&ptr_philo, param))
 			return (1);
-        init_destroy_mutex(&(*param)->fork, nb, INIT);
-        init_destroy_mutex(&(*param)->print, 1, INIT);
-        init_destroy_mutex(&(*param)->tmp, 1, INIT);
+        init_destroy_mutex(&(*param)->m_fork, nb, INIT);
+        init_destroy_mutex(&(*param)->m_print, 1, INIT);
+        init_destroy_mutex(&(*param)->m_life, 1, INIT);
         (*param)->time_start = get_time();
         while(++j < nb)
         {
@@ -106,9 +91,8 @@ int     create_thread(t_arg **param)
                 &philosophers, (void *)philo))
                         return (msg_error("error: pthread_create\n"));
         }
-		if (nb == 1)
-			check_up(&ptr_philo, param);
-        return (join_thread(param));
+	check_up(ptr_philo, param);
+        return (join_thread(param, ptr_philo));
 }
 
 
@@ -119,12 +103,16 @@ int	main(int argc, char *argv[])
 	param = NULL;
 	if (error_input_exist(argc, argv))
 		return (1);
-	init_arg(&param, argv);
-	if (create_thread(&param))
+	if (init_arg(&param, argv))
 	{
-		free_all(&param);
+		clean_arg(&param);
 		return (1);
 	}
-	free_all(&param);
+	if (create_thread(&param))
+	{
+		clean_arg(&param);
+		return (1);
+	}
+	clean_arg(&param);
 	return (0);
 }

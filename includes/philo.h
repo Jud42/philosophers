@@ -30,16 +30,14 @@
 #define DIED 6
 #define INIT 7
 #define DESTROY 8
-#define BOLD $(shell tput bold)
 
 typedef struct s_philo{
-	int					x;
-	int					state;
-	int					nb_eat;
-	atomic_int		*fork_left;
-	atomic_int		*fork_right;
+	int			x;
+	int			nb_eat;
+	int			*fork_left;
+	int			*fork_right;
 	long long int		last_eat; //each philo
-	pthread_mutex_t		*lets_eat;
+	pthread_mutex_t		*m_eat;
 	struct	s_arg		*param;
 }	t_philo;
 
@@ -51,12 +49,13 @@ int				time_to_eat;
 int				time_to_sleep;
 int				nb_each_philo_eat; //argv optionnel
 int				end;
-long long int	time_start;
-atomic_int	*fork_atom;
-pthread_mutex_t	*print;
-pthread_mutex_t	*fork;
-pthread_mutex_t	*tmp;
-pthread_t		*thread;
+int				state;
+int				*fork_on_table;
+long long int			time_start;
+pthread_t			*thread;
+pthread_mutex_t			*m_print;
+pthread_mutex_t			*m_fork;
+pthread_mutex_t			*m_life;
 }	t_arg;
 
 	/*----------ERROR-MANAGE-----------*/
@@ -66,6 +65,7 @@ int		error_input_exist(int ac, char **av);
 int		init_arg(t_arg **param, char **av);
 int		init_philo(t_philo **philo, t_arg **param, int *j);
 int		init_destroy_mutex(pthread_mutex_t **mut, int nb, int flag);
+int		create_ptr_philo(t_philo ***ptr_philo, t_arg **param);
 	/*---ROUTINE-PHILO---*/
 void		eat(t_philo *philo);
 void		sleep_philo(t_philo *philo);	
@@ -80,8 +80,9 @@ int		ft_strlen(const char *s);
 int		ft_digit(int c);	
 long long int	get_time(void);
 	/*-------*/
-void		free_all(t_arg **param);
-void		put_fork(t_philo *philo);
-int		life_expectancy(t_philo *philo);
+void		clean_arg(t_arg **param);
+void		clean_philo(t_philo ***philo, int nb);
+void		put_fork(t_philo **philo);
+int		life_expectancy(t_philo **tmp_philo, t_arg **param);
 int		philo_dead(t_philo *philo);
 #endif

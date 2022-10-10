@@ -14,18 +14,20 @@ NAME = philo
 
 SRC =	main.c \
 	init.c \
+	init2.c \
 	utils.c	\
 	free_utils.c \
 	error_manage.c \
 	routine_philo.c \
 	print_state_philo.c \
+	utils_check_up.c	\
 
 SRCS = $(addprefix srcs/, $(SRC))
 DIR_S = srcs
 
 INCLUDE = -I ./includes
 
-FLAGS = -Wall -Wextra -Werror -g3 -o0 -fsanitize=address
+FLAGS = -Wall -Wextra -Werror -g -fsanitize=address
 CC = gcc
 
 RM = rm -rf
