@@ -1,8 +1,20 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   error_manage.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: rmamison <marvin@42lausanne.ch>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/10/12 15:11:44 by rmamison          #+#    #+#             */
+/*   Updated: 2022/10/12 16:13:35 by rmamison         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "philo.h"
 
-int    msg_error(const char *s)
+int	msg_error(const char *s)
 {
-        write(2, s, ft_strlen(s));
+	write(2, s, ft_strlen(s));
 	return (1);
 }
 
@@ -19,7 +31,7 @@ int	error_input_exist(int ac, char **av)
 		j = -1;
 		while (av[i][++j])
 			if (ft_digit(av[i][j]))
-				return (msg_error("error:argument not numeric\n"));
+				return (msg_error("error: input\n"));
 		if (ft_atoi(av[1]) <= 0)
 			return (msg_error("error: 1 philosopher minimum\n"));
 	}

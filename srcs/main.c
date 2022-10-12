@@ -6,41 +6,41 @@
 /*   By: rmamison <marvin@42lausanne.ch>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/09/20 13:51:13 by rmamison          #+#    #+#             */
-/*   Updated: 2022/10/04 17:40:09 by rmamison         ###   ########.fr       */
+/*   Updated: 2022/10/12 18:58:19 by rmamison         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #include "philo.h"
 
-static int      join_thread(t_arg **param, t_philo **philo)
+static int	join_thread(t_arg **param, t_philo **philo)
 {
-        int     j;
+	int	j;
 
-        j = -1;
-        while(++j < (*param)->nb_of_philo)
-        {
-                if (pthread_join((*param)->thread[j], NULL))
-                        return (msg_error("error: pthread_join\n"));
-        }
+	j = -1;
+	while (++j < (*param)->nb_of_philo)
+	{
+		if (pthread_join((*param)->thread[j], NULL))
+			return (msg_error("error: pthread_join\n"));
+	}
 	clean_philo(&philo, (*param)->nb_of_philo);
-        init_destroy_mutex(&(*param)->m_fork, (*param)->nb_of_philo, DESTROY);
-        init_destroy_mutex(&(*param)->m_print, 1, DESTROY);
-        init_destroy_mutex(&(*param)->m_life, 1, DESTROY);
-        return (0);
+	init_destroy_mutex(&(*param)->m_fork, (*param)->nb_of_philo, DESTROY);
+	init_destroy_mutex(&(*param)->m_print, 1, DESTROY);
+	init_destroy_mutex(&(*param)->m_life, 1, DESTROY);
+	return (0);
 }
 
-static void check_up(t_philo **tm_philo, t_arg **param)
+static void	check_up(t_philo **tm_philo, t_arg **param)
 {
-	int	state;
 	int	nb;
 
-	state = 1;
 	nb = (*param)->nb_of_philo;
 	usleep((*param)->time_to_die / 2 * 1000);
-	while (state != DIED && (*param)->end != nb)
+	while ((*param)->died == 0 && (*param)->end != nb)
 	{
 		usleep(500);
-		state = life_expectancy(tm_philo, param);
+		life_expectancy(tm_philo, param);
 	}
+	if ((*param)->nb_of_philo == 1)
+		pthread_mutex_unlock(tm_philo[0]->m_fork_right);
 }
 
 void	*philosophers(void *arg)
@@ -49,52 +49,47 @@ void	*philosophers(void *arg)
 
 	philo = (t_philo *)arg;
 	if (philo->x % 2 == 0)
-		usleep(philo->param->time_to_eat * 1000);
-	pthread_mutex_lock(philo->param->m_life);
+		usleep(1000);
 	philo->last_eat = get_time();
-	pthread_mutex_unlock(philo->param->m_life);
 	while (1)
 	{
 		think(philo);
 		eat(philo);
 		sleep_philo(philo);
-		if (philo_dead(philo) || \
+		if (philo->param->died || \
 		philo->param->nb_each_philo_eat && \
 		philo->nb_eat == philo->param->nb_each_philo_eat)
 			break ;
 	}
-	philo->param->end++;
+	if (philo->param->nb_each_philo_eat)
+		philo->param->end++;
 	return (NULL);
 }
 
-int     create_thread(t_arg **param)
+int	create_thread(t_arg **param)
 {
-        int     j;
-        int     nb;
-        t_philo *philo;
-	t_philo **ptr_philo;
+	int		j;
+	int		nb;
+	t_philo	*philo;
+	t_philo	**ptr_philo;
 
-        j = -1;
-        nb = (*param)->nb_of_philo;
-		if (create_ptr_philo(&ptr_philo, param))
+	nb = (*param)->nb_of_philo;
+	if (create_ptr_philo(&ptr_philo, param))
+		return (1);
+	(*param)->time_start = get_time();
+	j = -1;
+	while (++j < nb)
+	{
+		if (init_philo(&philo, param, &j))
 			return (1);
-        init_destroy_mutex(&(*param)->m_fork, nb, INIT);
-        init_destroy_mutex(&(*param)->m_print, 1, INIT);
-        init_destroy_mutex(&(*param)->m_life, 1, INIT);
-        (*param)->time_start = get_time();
-        while(++j < nb)
-        {
-                if (init_philo(&philo, param, &j))
-                        return (1);
 		ptr_philo[j] = philo;
-                if (pthread_create(&(*param)->thread[j], NULL, \
-                &philosophers, (void *)philo))
-                        return (msg_error("error: pthread_create\n"));
-        }
+		if (pthread_create(&(*param)->thread[j], NULL, \
+		&philosophers, (void *)philo))
+			return (msg_error("error: pthread_create\n"));
+	}
 	check_up(ptr_philo, param);
-        return (join_thread(param, ptr_philo));
+	return (join_thread(param, ptr_philo));
 }
-
 
 int	main(int argc, char *argv[])
 {
